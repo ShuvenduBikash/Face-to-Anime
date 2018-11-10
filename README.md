@@ -1,10 +1,10 @@
 # F a c e - t o - A n i m e 
 
-###Train
+### Train
 ```
 python GAN.py --name your_project_name --src_data src_data_path --tgt_data tgt_data_path --vgg_model pre_trained_VGG19_model_path
 ```
-###Folder structure
+### Folder structure
 The following shows basic folder structure.
 ```
 ├── data
@@ -24,7 +24,7 @@ The following shows basic folder structure.
 
 
 
-##Development Environment
+## Development Environment
 
 * NVIDIA GTX 1060
 * cuda 8.0
@@ -33,7 +33,7 @@ The following shows basic folder structure.
 * torchvision 0.2.1
 * opencv 3.2.0
 
-##Reference
+## Reference
 [1] Chen, Yang, Yu-Kun Lai, and Yong-Jin Liu. "CartoonGAN: Generative Adversarial Networks for Photo Cartoonization." Proceedings of the IEEE Conference on Computer Vision and Pattern Recognition. 2018.
 
 
