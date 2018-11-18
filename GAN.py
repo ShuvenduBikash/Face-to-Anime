@@ -19,6 +19,7 @@ parser.add_argument('--out_ndc', type=int, default=1, help='output channel for d
 parser.add_argument('--batch_size', type=int, default=8, help='batch size')
 parser.add_argument('--ngf', type=int, default=64)
 parser.add_argument('--ndf', type=int, default=32)
+parser.add_argument('--start_epoch', type=int, default=0)
 parser.add_argument('--nb', type=int, default=8, help='the number of resnet block layer for generator')
 parser.add_argument('--input_size', type=int, default=256, help='input size')
 parser.add_argument('--train_epoch', type=int, default=100)
@@ -76,6 +77,14 @@ G = networks.generator(args.in_ngc, args.out_ngc, args.ngf, args.nb)
 D = networks.discriminator(args.in_ndc, args.out_ndc, args.ndf)
 VGG = networks.VGG19(init_weights=args.vgg_model, feature_mode=True)
 
+if args.start_epoch != 0:
+    try:
+        G.load_state_dict(torch.load(os.path.join(args.name + '_results', 'generator_latest.pt')))
+        D.load_state_dict(torch.load(os.path.join(args.name + '_results', 'discriminator_latest.pt')))
+        print("Model loaded successfully!!!!")
+    except:
+        print("Model loading went wrong!!!!")
+
 G.to(device)
 D.to(device)
 VGG.to(device)
@@ -107,7 +116,7 @@ pre_train_hist = {'Recon_loss': [], 'per_epoch_time': [], 'total_time': []}
 """ Pre-train reconstruction """
 print('Pre-training start!')
 start_time = time.time()
-for epoch in range(args.pre_train_epoch):
+for epoch in range(args.start_epoch, args.pre_train_epoch):
     epoch_start_time = time.time()
     Recon_losses = []
     for x, _ in train_loader_src:
@@ -132,11 +141,11 @@ for epoch in range(args.pre_train_epoch):
     per_epoch_time = time.time() - epoch_start_time
     pre_train_hist['per_epoch_time'].append(per_epoch_time)
     print('[%d/%d] - time: %.2f, Recon loss: %.3f' % (
-    (epoch + 1), args.pre_train_epoch, per_epoch_time, torch.mean(torch.FloatTensor(Recon_losses))))
+        (epoch + 1), args.pre_train_epoch, per_epoch_time, torch.mean(torch.FloatTensor(Recon_losses))))
 
 total_time = time.time() - start_time
 pre_train_hist['total_time'].append(total_time)
-with open(os.path.join(args.name + '_results', 'pre_train_hist.pkl'), 'wb') as f:
+with open(os.path.join(args.name + '_results', 'pre_train_hist.pt'), 'wb') as f:
     pickle.dump(pre_train_hist, f)
 
 with torch.no_grad():
@@ -160,7 +169,6 @@ with torch.no_grad():
             break
 
 train_hist = {'Disc_loss': [], 'Gen_loss': [], 'Con_loss': [], 'per_epoch_time': [], 'total_time': []}
-
 
 print('training start!')
 start_time = time.time()
@@ -223,8 +231,8 @@ for epoch in range(args.train_epoch):
     train_hist['per_epoch_time'].append(per_epoch_time)
     print(
         '[%d/%d] - time: %.2f, Disc loss: %.3f, Gen loss: %.3f, Con loss: %.3f' % (
-        (epoch + 1), args.train_epoch, per_epoch_time, torch.mean(torch.FloatTensor(Disc_losses)),
-        torch.mean(torch.FloatTensor(Gen_losses)), torch.mean(torch.FloatTensor(Con_losses))))
+            (epoch + 1), args.train_epoch, per_epoch_time, torch.mean(torch.FloatTensor(Disc_losses)),
+            torch.mean(torch.FloatTensor(Gen_losses)), torch.mean(torch.FloatTensor(Con_losses))))
 
     with torch.no_grad():
         G.eval()
@@ -248,17 +256,17 @@ for epoch in range(args.train_epoch):
             if n == 4:
                 break
 
-        torch.save(G.state_dict(), os.path.join(args.name + '_results', 'generator_latest.pkl'))
-        torch.save(D.state_dict(), os.path.join(args.name + '_results', 'discriminator_latest.pkl'))
+        torch.save(G.state_dict(), os.path.join(args.name + '_results', 'generator_latest.pt'))
+        torch.save(D.state_dict(), os.path.join(args.name + '_results', 'discriminator_latest.pt'))
 
 total_time = time.time() - start_time
 train_hist['total_time'].append(total_time)
 
 print("Avg one epoch time: %.2f, total %d epochs time: %.2f" % (
-torch.mean(torch.FloatTensor(train_hist['per_epoch_time'])), args.train_epoch, total_time))
+    torch.mean(torch.FloatTensor(train_hist['per_epoch_time'])), args.train_epoch, total_time))
 print("Training finish!... save training results")
 
-torch.save(G.state_dict(), os.path.join(args.name + '_results', 'generator_param.pkl'))
-torch.save(D.state_dict(), os.path.join(args.name + '_results', 'discriminator_param.pkl'))
-with open(os.path.join(args.name + '_results', 'train_hist.pkl'), 'wb') as f:
+torch.save(G.state_dict(), os.path.join(args.name + '_results', 'generator_param.pt'))
+torch.save(D.state_dict(), os.path.join(args.name + '_results', 'discriminator_param.pt'))
+with open(os.path.join(args.name + '_results', 'train_hist.pt'), 'wb') as f:
     pickle.dump(train_hist, f)
