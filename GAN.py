@@ -5,6 +5,7 @@ import torch.optim as optim
 import matplotlib.pyplot as plt
 from torchvision import transforms
 from edge_promoting import edge_promoting
+from tqdm import tqdm
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--name', required=False, default='project_name', help='')
@@ -93,11 +94,11 @@ G.train()
 D.train()
 VGG.eval()
 
-print('---------- Networks initialized -------------')
-utils.print_network(G)
-utils.print_network(D)
-utils.print_network(VGG)
-print('-----------------------------------------------')
+# print('---------- Networks initialized -------------')
+# utils.print_network(G)
+# utils.print_network(D)
+# utils.print_network(VGG)
+# print('-----------------------------------------------')
 
 # loss
 BCE_loss = nn.BCELoss().to(device)
@@ -116,7 +117,7 @@ pre_train_hist = {'Recon_loss': [], 'per_epoch_time': [], 'total_time': []}
 """ Pre-train reconstruction """
 print('Pre-training start!')
 start_time = time.time()
-for epoch in range(args.start_epoch, args.pre_train_epoch):
+for epoch in range(args.pre_train_epoch):
     epoch_start_time = time.time()
     Recon_losses = []
     for x, _ in train_loader_src:
@@ -174,7 +175,7 @@ print('training start!')
 start_time = time.time()
 real = torch.ones(args.batch_size, 1, args.input_size // 4, args.input_size // 4).to(device)
 fake = torch.zeros(args.batch_size, 1, args.input_size // 4, args.input_size // 4).to(device)
-for epoch in range(args.train_epoch):
+for epoch in range(args.start_epoch, args.train_epoch):
     epoch_start_time = time.time()
     G.train()
     G_scheduler.step()
@@ -182,7 +183,7 @@ for epoch in range(args.train_epoch):
     Disc_losses = []
     Gen_losses = []
     Con_losses = []
-    for (x, _), (y, _) in zip(train_loader_src, train_loader_tgt):
+    for (x, _), (y, _) in zip(tqdm(train_loader_src), train_loader_tgt):
         e = y[:, :, :, args.input_size:]
         y = y[:, :, :, :args.input_size]
         x, y, e = x.to(device), y.to(device), e.to(device)
